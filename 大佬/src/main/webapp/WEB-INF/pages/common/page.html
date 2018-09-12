@@ -1,0 +1,48 @@
+<ul class="pagination pagination-sm no-margin pull-right">
+	<li><a class="first">首页</a></li>
+	<li><a class="pre">上一页</a></li>
+	<li><a class="next">下一页</a></li>
+	<li><a class="last">尾页</a></li>
+	<li><a class="rowCount">总记录数(0)</a></li>
+	<li><a class="pageCount">总页数(0)</a></li>
+	<li><a class="pageCurrent">当前页(0)</a></li>
+</ul>
+<script type="text/javascript">
+   $(function(){
+	  $("#pageId").on("click",
+	  ".first,.pre,.next,.last",doJumpToPage);
+   })
+   //初始化分页数据
+   function doSetPagination(pageObject){
+	 //1.初始化分页数据
+	 $(".rowCount").html("总记录数("+pageObject.rowCount+")");
+	 $(".pageCount").html("总页数("+pageObject.pageCount+")");
+	 $(".pageCurrent").html("当前页("+pageObject.pageCurrent+")");
+     //2.绑定分页数据
+     $("#pageId").data("pageCurrent",pageObject.pageCurrent);
+     $("#pageId").data("pageCount",pageObject.pageCount);
+   }
+   function doJumpToPage(){
+	//debugger
+	//1.获取点击对象的类选择器
+	var cls=$(this).prop("class");
+	//2.基于类选择器修改pageCurrent的值
+	var pageCurrent=$("#pageId").data("pageCurrent");
+	var pageCount=$("#pageId").data("pageCount");
+	if(cls=="first"){
+		pageCurrent=1;
+	}else if(cls=="pre"&&pageCurrent>1){
+		pageCurrent--;
+	}else if(cls=="next"&&pageCurrent<pageCount){
+		pageCurrent++;
+	}else if(cls=="last"){
+		pageCurrent=pageCount;
+	}
+	//3.绑定此值到pageId位置
+	 $("#pageId").data("pageCurrent",pageCurrent);
+	//4.重新执行查询操作
+	 doGetObjects();
+   }
+</script>
+
+

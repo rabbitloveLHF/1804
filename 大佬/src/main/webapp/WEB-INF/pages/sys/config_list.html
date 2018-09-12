@@ -1,0 +1,198 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">配置管理</h3>
+				<div class="box-tools">
+					<div class="input-group input-group-sm" style="width: 350px;">
+						<input type="text" name="table_search" id="searchNameId"
+							class="form-control pull-right" placeholder="参数名">
+					
+						<div class="input-group-btn">
+							<button type="button" class="btn btn-default btn-search">
+                                <i class="fa fa-search"></i>
+							</button>
+							
+							<button type="button" 
+							class="btn btn-default btn-delete">删除</button>
+							<button type="button" class="btn btn-default btn-add">添加</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<form>
+				  <table class="table table-hover">
+					<thead>
+						<tr>
+							<th><input type="checkbox" id="checkAll">全选</th>
+							<th>参数名</th>
+							<th>参数值</th>
+							<th>创建日期</th>
+							<th>修改日期</th>
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody id="tbodyId">
+					</tbody>
+				  </table>
+				</form>
+			</div>
+			<!-- /.box-body -->
+			<div id="pageId" class="box-footer clearfix">
+              
+            </div>
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+<script type="text/javascript">
+    $(function(){
+    	$("#pageId").load("doPageUI.do",function(){
+    		doGetObjects();
+    	});
+    	$(".input-group-btn")
+    	.on("click",".btn-search",doQueryObjects)
+    	.on("click",".btn-delete",doDeleteObjects);
+    	
+    	$("#checkAll").change(doCheckAll);
+    	$("#tbodyId")
+    	.on("change",".cBox",doChangeCheckAllState)
+    });
+    
+    function doChangeCheckAllState(){
+      //1.定义一个状态值
+      var flag=true;
+      //2.获取tbody中checkbox的值相与的一个结果
+      $("#tbodyId input[type='checkbox']")
+      .each(function(){
+    	  flag=flag&&$(this).prop("checked");
+      });
+      //3.将此值应用在thead中的checkbox对象上
+      $("#checkAll").prop("checked",flag);
+    }
+    
+    function doCheckAll(){
+    	//thead checkbox state
+    	var flag=$("#checkAll").prop("checked");
+    	//update tbody checkbox state
+    	$("#tbodyId input[type='checkbox']")
+    	.each(function(){
+    		$(this).prop("checked",flag);
+    	})
+    }
+    //执行删除操作
+    function doDeleteObjects(){
+    	//1.get request params
+    	var ids=doGetCheckedIds();
+    	console.log("ids="+ids);
+    	if(ids.length==0){
+    		alert("请先选中");
+    		return;
+    	}
+    	var params={"ids":ids.toString()};//1,2,3,4
+    	//2.get request url
+    	var url="config/doDeleteObjects.do";
+    	//3.send ajax request
+    	
+    	$.post(url,params,function(result){
+    		if(result.state==1){
+    		   alert(result.message);
+    		   $("#pageId").data("pageCurrent",1);		   
+    		   doGetObjects();
+    		}else{
+    		   alert(result.message);
+    		}
+    	});
+    }
+    function doGetCheckedIds(){
+    	var array=[];
+    	//1.获取tbody中所有checkbox元素
+    	$("#tbodyId input[type=checkbox]")
+    	//2.迭代所有checkbox元素,判定是否选中
+    	.each(function(){
+    	//3.将选中元素的id存储到数组.
+    	  if($(this).prop("checked")){
+    		  array.push($(this).val())
+    	  }
+    	})
+    	//4.返回数组
+    	return array;
+    }
+    function doQueryObjects(){
+    	//条件查询从第一页开始显示
+    	$("#pageId").data("pageCurrent",1);
+    	//重新执行查询操作
+    	doGetObjects();
+    }
+    
+    
+    function doGetObjects(){
+     //1. request params
+     var pageCurrent=
+     $("#pageId").data("pageCurrent");
+     if(!pageCurrent)pageCurrent=1;
+     var params={"pageCurrent":pageCurrent}
+     //执行查询操作时获取的参数名
+     var name=$("#searchNameId").val();
+     if(name)params.name=name;
+     //2. request url
+     var url="config/doFindPageObjects.do"
+     //3. ajax request
+     //ajax function (get,json)
+     $.getJSON(url,params,function(result){//jsonResult
+    	console.log(result);
+    	doHandleResponseResult(result); 
+     });
+    }
+    //process response result
+    function doHandleResponseResult(result){
+    	if(result.state==1){
+    	   //init body rows
+    	   doSetTableBodyRows(result.data.records);
+    	   //init page info
+    	   doSetPagination(result.data);
+    	}else{
+    	   alert(result.message);
+    	}
+    }
+    //do init table body content
+    function doSetTableBodyRows(records){
+     //1. get tbody object,execute empty
+     var tBody=$("#tbodyId");
+     tBody.empty();
+     //2. iterator records
+     for(var i in records){
+    	 //2.1 create tr
+    	var tr=$("<tr></tr>");
+    	 //2.2 create tds
+    	var tds=doCreateTds(records[i]);
+    	 //2.3 append tds in tr
+    	tr.append(tds);
+    	 //2.4 append tr in tbody
+    	tBody.append(tr);
+     }
+    }
+    //create tds in tr
+    function doCreateTds(row){
+    	var tds="<td><input type='checkbox' class='cBox' name='cItem' value='"+row.id+"'></td>"
+    	+"<td>"+row.name+"</td>"
+    	+"<td>"+row.value+"</td>"
+    	+"<td>"+new Date(row.createdTime).toLocaleString()+"</td>"
+    	+"<td>"+new Date(row.modifiedTime).toLocaleString()+"</td>"
+    	+"<td><button type='button' class='btn btn-default btn-update'>update</button></td>";
+        return tds;
+    }
+</script>
+
+
+
+
+
+
+
+
+
+
+
